@@ -1,6 +1,7 @@
 [Unit]
 Description=EVNotify Python Service
 Wants=gpsd.service
+Wants=bluetooth.service
 Wants=network-online.target
 After=network-online.target
 
