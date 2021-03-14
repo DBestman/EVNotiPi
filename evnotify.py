@@ -1,199 +1,212 @@
-import evnotifyapi
+""" Transmit data to EVNotify and handle notifications """
 from time import time, sleep
 from threading import Thread, Condition
 import logging
+import EVNotifyAPI
 
 EVN_SETTINGS_INTERVAL = 300
 ABORT_NOTIFICATION_INTERVAL = 60
 
-ExtendedFields = (
-        'auxBatteryVoltage',
-        'batteryInletTemperature',
-        'batteryMaxTemperature',
-        'batteryMinTemperature',
-        'cumulativeEnergyCharged',
-        'cumulativeEnergyDischarged',
-        'charging',
-        'normalChargePort',
-        'rapidChargePort',
-        'dcBatteryCurrent',
-        'dcBatteryPower',
-        'dcBatteryVoltage',
-        'soh',
-        'externalTemperature'
-        )
+EXTENDED_FIELDS = {         # value is decimal places
+    'auxBatteryVoltage': 1,
+    'batteryInletTemperature': 1,
+    'batteryMaxTemperature': 1,
+    'batteryMinTemperature': 1,
+    'cumulativeEnergyCharged': 1,
+    'cumulativeEnergyDischarged': 1,
+    'charging': 0,
+    'normalChargePort': 0,
+    'rapidChargePort': 0,
+    'dcBatteryCurrent': 2,
+    'dcBatteryPower': 2,
+    'dcBatteryVoltage': 2,
+    'soh': 0,
+    'externalTemperature': 1,
+    'odo': 0
+    }
 
-class NoData(Exception): pass
+ARMED = 0
+SENT = 1
+FAILED = -1
+
 
 class EVNotify:
+    """ Interface to EVNotify. """
+
     def __init__(self, config, car):
-        self.log = logging.getLogger("EVNotiPi/EVNotify")
-        self.log.info("Initializing EVNotify")
+        self._log = logging.getLogger("EVNotiPi/EVNotify")
+        self._log.info("Initializing EVNotify")
 
-        self.abortNotificationSent = False
-        self.car = car
-        self.chargingStartSOC = 0
-        self.config = config
-        self.last_charging = time()
-        self.last_charging_soc = 0
-        self.last_evn_settings_poll = 0
-        self.notificationSent = False
-        self.poll_interval = config['interval']
-        self.running = False
-        self.thread = None
-        self.evnotify = evnotifyapi.EVNotify(config['akey'], config['token'])
+        self._car = car
+        self._config = config
+        self._poll_interval = config['interval']
+        self._running = False
+        self._thread = None
 
-        self.data = []
-        self.gps_data = []
-        self.data_lock = Condition()
-
-        self.settings = None
-        self.socThreshold = 100
+        self._data = []
+        self._gps_data = []
+        self._data_lock = Condition()
 
     def start(self):
-        self.running = True
-        self.thread = Thread(target = self.submitData, name = "EVNotiPi/EVNotify")
-        self.thread.start()
-        self.car.registerData(self.dataCallback)
+        """ Start submit thread. """
+        self._running = True
+        self._thread = Thread(target=self.submit_data, name="EVNotiPi/EVNotify")
+        self._thread.start()
+        self._car.register_data(self.data_callback)
 
     def stop(self):
-        self.car.unregisterData(self.dataCallback)
-        self.running = False
-        with self.data_lock:
-            self.data_lock.notify()
-        self.thread.join()
+        """ Stop submit thread. """
+        self._car.unregister_data(self.data_callback)
+        self._running = False
+        with self._data_lock:
+            self._data_lock.notify()
+        self._thread.join()
 
-    def dataCallback(self, data):
-        self.log.debug("Enqeue...")
-        with self.data_lock:
-            self.data.append(data)
-            self.data_lock.notify()
+    def data_callback(self, data):
+        """ Callback to be called from 'car'. """
+        self._log.debug("Enqeue...")
+        with self._data_lock:
+            self._data.append(data)
+            self._data_lock.notify()
 
-    def submitData(self):
-        self.log.info("Get settings from backend")
-        while self.settings == None:
+    def submit_data(self):
+        """ Thread that submits data to EVNotify in regular intervals. """
+        log = self._log
+        evn = EVNotifyAPI.EVNotify(self._config['akey'], self._config['token'])
+
+        abort_notification = ARMED
+        charging_start_soc = 0
+        last_charging = time()
+        last_charging_soc = 0
+        last_evn_settings_poll = 0
+        is_charging = 0
+        is_connected = 0
+        settings = None
+        soc_notification = ARMED
+        soc_threshold = self._config.get('soc_threshold', 100)
+
+        log.info("Get settings from backend")
+        while self._running and settings is None:
             try:
-                self.settings = self.evnotify.getSettings()
-            except evnotifyapi.CommunicationError as e:
-                self.log.info("Waiting for network connectivity")
+                settings = evn.getSettings()
+            except EVNotifyAPI.CommunicationError as err:
+                log.info("Waiting for network connectivity (%s)", err)
                 sleep(3)
 
-        while self.running:
-            with self.data_lock:
-                self.log.debug('Waiting...')
-                self.data_lock.wait()
-                if len(self.data) == 0:
+        while self._running:
+            with self._data_lock:
+                log.debug('Waiting...')
+                self._data_lock.wait(max(10, self._poll_interval))
+                now = time()
+
+                # Detect aborted charge
+                if ((now - last_charging > ABORT_NOTIFICATION_INTERVAL and
+                     charging_start_soc > 0 and 0 < last_charging_soc < soc_threshold and
+                     abort_notification is ARMED) or abort_notification is FAILED):
+                    log.info("Aborted charge detected, send abort notification")
+                    try:
+                        evn.sendNotification(True)
+                        abort_notification = SENT
+                    except EVNotifyAPI.CommunicationError as err:
+                        log.error("Communication Error: %s", err)
+                        abort_notification = FAILED
+
+                if len(self._data) == 0:
                     continue
 
-                self.log.debug("Transmit...")
+                new_data = self._data.copy()
+                self._data.clear()
 
-                avgs = {
-                        'dcBatteryCurrent': [],
-                        'dcBatteryPower': [],
-                        'dcBatteryVoltage': [],
-                        'speed': [],
-                        'latitude': [],
-                        'longitude': [],
-                        'altitude': [],
-                        }
+            log.debug("Transmit...")
 
-                for d in self.data:
-                    for k,v in avgs.items():
-                        if k in d and d[k] != None:
-                            v.append(d[k])
+            avgs = {
+                'dcBatteryCurrent': [],
+                'dcBatteryPower': [],
+                'dcBatteryVoltage': [],
+                'speed': [],
+                'latitude': [],
+                'longitude': [],
+                'altitude': [],
+            }
 
-                # Need to copy data here because we update it later
-                data = self.data[-1].copy()
-                self.data.clear()
+            for data in new_data:
+                for key, values in avgs.items():
+                    if data.get(key, None) is not None:
+                        values.append(data[key])
 
-            data.update({k:sum(v)/len(v) for k,v in avgs.items() if len(v) > 0})
+            # Need to copy data here because we update it later
+            data = new_data[-1]
 
-            now = time()
+            data.update({k: sum(v)/len(v)
+                         for k, v in avgs.items() if len(v) > 0})
 
             try:
-                self.last_data = now
+                if (data['SOC_DISPLAY'] is not None or
+                        data['SOC_BMS'] is not None):
+                    evn.setSOC(data['SOC_DISPLAY'], data['SOC_BMS'])
 
-                self.evnotify.setSOC(data['SOC_DISPLAY'], data['SOC_BMS'])
+                    current_soc = data['SOC_DISPLAY'] or data['SOC_BMS']
 
-                currentSOC = data['SOC_DISPLAY'] or data['SOC_BMS']
+                    is_charging = bool(data['charging'])
+                    is_connected = bool(data['normalChargePort'] or data['rapidChargePort'])
 
-                is_charging = True if data['charging'] else False
-                is_connected = True if data['normalChargePort'] \
-                        or data['rapidChargePort'] else False
+                    extended_data = {a: round(data[a], EXTENDED_FIELDS[a])
+                                     for a in EXTENDED_FIELDS if data[a] is not None}
+                    log.debug(extended_data)
+                    evn.setExtended(extended_data)
 
                 if data['fix_mode'] > 1:
-                    location = {a:data[a] for a in ('latitude', 'longitude', 'speed')}
-                    self.evnotify.setLocation({'location': location})
-
-                extended_data = {a:data[a] for a in ExtendedFields if data[a] != None}
-                self.log.debug(extended_data)
-                self.evnotify.setExtended(extended_data)
+                    location = {a: data[a]
+                                for a in ('latitude', 'longitude', 'speed')}
+                    evn.setLocation({'location': location})
 
                 # Notification handling from here on
-                if is_charging:
-                    self.last_charging = now
-                    self.last_charging_soc = currentSOC
-
-                if is_charging and 'socThreshold' not in self.config and \
-                        now - self.last_evn_settings_poll > EVN_SETTINGS_INTERVAL:
+                if is_charging and now - last_evn_settings_poll > EVN_SETTINGS_INTERVAL:
                     try:
-                        s = self.evnotify.getSettings()
-                        # following only happens if getSettings is
-                        # successful, else jumps into exception handler
-                        self.settings = s
-                        self.last_evn_settings_poll = now
+                        settings = evn.getSettings()
+                        last_evn_settings_poll = now
 
-                        if s['soc'] and s['soc'] != self.socThreshold:
-                            self.socThreshold = int(s['soc'])
-                            self.log.info("New notification threshold: {}".format(self.socThreshold))
+                        if 'soc' in settings:
+                            new_soc = int(settings['soc'])
+                            if new_soc != soc_threshold:
+                                soc_threshold = new_soc
+                                log.info("New notification threshold: %i",
+                                         soc_threshold)
 
-                    except envotifyapi.CommunicationError as e:
-                        self.log.error("Communication error occured",e)
+                    except EVNotifyAPI.CommunicationError as err:
+                        log.error("Communication error occured %s", err)
 
                 # track charging started
-                if is_charging and self.chargingStartSOC == 0:
-                    self.chargingStartSOC = currentSOC or 0
-                # check if notification threshold reached
-                #elif is_charging and chargingStartSOC < socThreshold and \
-                #        currentSOC >= socThreshold and not notificationSent:
-                #    print("Notification threshold reached")
-                #    self.evnotify.sendNotification()
-                #    notificationSent = True
-                elif not is_connected:   # Rearm notification
-                    self.chargingStartSOC = 0
-                    self.notificationSent = False
-                    self.abortNotificationSent = False
+                if is_charging and charging_start_soc == 0:
+                    charging_start_soc = current_soc or 0
+                elif not is_connected:   # Rearm abort notification
+                    charging_start_soc = 0
+                    abort_notification = ARMED
 
-                if is_charging and \
-                        self.last_charging_soc < self.socThreshold and \
-                        currentSOC >= self.socThreshold:
-                    self.evnotify.sendNotification()
+                # SoC threshold notification
+                if ((is_charging and 0 < last_charging_soc < soc_threshold <= current_soc)
+                        or soc_notification is FAILED):
+                    log.info("Notification threshold(%i) reached: %i",
+                             soc_threshold, current_soc)
+                    try:
+                        evn.sendNotification()
+                        soc_notification = ARMED
+                    except EVNotifyAPI.CommunicationError as err:
+                        log.info("Communication Error: %s", err)
+                        soc_notification = FAILED
 
-            except evnotifyapi.CommunicationError as e:
-                print(e)
-            except NoData:
-                pass
+                if is_charging:
+                    last_charging = now
+                    last_charging_soc = current_soc
 
-            # Detect aborted charge
-            try:
-                if not self.abortNotificationSent \
-                        and now - self.last_charging > ABORT_NOTIFICATION_INTERVAL \
-                        and self.chargingStartSOC > 0 and self.last_charging_soc < self.socThreshold:
-                    self.log.info("No response detected, send abort notification")
-                    self.evnotify.sendNotification(True)
-                    self.abortNotificationSent = True
-
-            except evnotifyapi.CommunicationError as e:
-                self.log.error("Sending of notificatin failed! {}".format(e))
-
+            except EVNotifyAPI.CommunicationError as err:
+                log.info("Communication Error: %s", err)
 
             # Prime next loop iteration
-            if self.running:
-                runtime = time() - now
-                interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
-                sleep(min(0, interval))
+            if self._running:
+                interval = self._poll_interval - (time() - now)
+                sleep(max(0, interval))
 
-
-    def checkWatchdog(self):
-        return self.thread.is_alive()
-
+    def check_thread(self):
+        """ Return running state of thread. """
+        return self._thread.is_alive()

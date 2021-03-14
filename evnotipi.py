@@ -1,24 +1,33 @@
 #!/usr/bin/env python3
+""" EVNotiPi main module """
 
 from gevent.monkey import patch_all; patch_all()
-from gpspoller import GpsPoller
-from subprocess import check_call, check_output
-from time import sleep,time
-import os
-import sys
-import signal
-import sdnotify
 import logging
+import os
+import signal
+import sys
 from argparse import ArgumentParser
+from subprocess import check_call, check_output
+from time import sleep, time
+import sdnotify
+from gpspoller import GpsPoller
 import evnotify
+import car
+import dongle
+import watchdog
 
 Systemd = sdnotify.SystemdNotifier()
 
-class WatchdogFailure(Exception): pass
+
+class ThreadFailure(Exception):
+    """ Raised when a sub thread fails """
+
 
 parser = ArgumentParser(description='EVNotiPi')
-parser.add_argument('-d', '--debug', dest='debug', action='store_true', default=False)
-parser.add_argument('-c', '--config', dest='config', action='store', default='config.yaml')
+parser.add_argument('-d', '--debug', dest='debug',
+                    action='store_true', default=False)
+parser.add_argument('-c', '--config', dest='config',
+                    action='store', default='config.yaml')
 args = parser.parse_args()
 del parser
 
@@ -50,59 +59,50 @@ log = logging.getLogger("EVNotiPi")
 
 del args
 
+# emulate old config if watchdog section is missing
+if 'watchdog' not in config or 'type' not in config['watchdog']:
+    log.warning('Old watchdog config syntax detected. Please adjust according to config.yaml.template.')
+    config['watchdog'] = {
+        'type': 'GPIO',
+        'shutdown_pin': config['dongle'].get('shutdown_pin', 24),
+        'pup_down': config['dongle'].get('pup_down', 21),
+    }
+
 # Load OBD2 interface module
-if not "{}.py".format(config['dongle']['type']) in os.listdir('dongles'):
-    raise Exception('Unsupported dongle {}'.format(config['dongle']['type']))
+DONGLE = dongle.load(config['dongle']['type'])
 
-# Init ODB2 adapter
-sys.path.insert(0, 'dongles')
-exec("from {0} import {0} as DONGLE".format(config['dongle']['type']))
-sys.path.remove('dongles')
+# Load car module
+CAR = car.load(config['car']['type'])
 
-if not "{}.py".format(config['car']['type']) in os.listdir('cars'):
-    raise Exception('Unsupported car {}'.format(config['car']['type']))
-
-sys.path.insert(0, 'cars')
-exec("from {0} import {0} as CAR".format(config['car']['type']))
-sys.path.remove('cars')
-
+# Load watchdog module
+WATCHDOG = watchdog.load(config['watchdog']['type'])
 
 Threads = []
 
-if 'watchdog' in config and config['watchdog'].get('enable') == True:
-    import watchdog
-    Watchdog = watchdog.Watchdog(config['watchdog'])
-else:
-    Watchdog = None
+# Init watchdog
+watchdog = WATCHDOG(config['watchdog'])
 
 # Init dongle
-dongle = DONGLE(config['dongle'], watchdog = Watchdog)
+dongle = DONGLE(config['dongle'])
 
 # Init GPS interface
 gps = GpsPoller()
 Threads.append(gps)
 
 # Init car
-car = CAR(config['car'], dongle, gps)
+car = CAR(config['car'], dongle, watchdog, gps)
 Threads.append(car)
 
 # Init EVNotify
 EVNotify = evnotify.EVNotify(config['evnotify'], car)
 Threads.append(EVNotify)
 
-# Init WiFi control
-if 'wifi' in config and config['wifi'].get('enable') == True:
-    from wifi_ctrl import WiFiCtrl
-    wifi = WiFiCtrl()
-else:
-    wifi = None
-
-# Init some variables
-main_running = True
 
 # Set up signal handling
 def exit_gracefully(signum, frame):
+    """ Signalhandler for SIGTERM """
     sys.exit(0)
+
 
 signal.signal(signal.SIGTERM, exit_gracefully)
 
@@ -110,51 +110,55 @@ signal.signal(signal.SIGTERM, exit_gracefully)
 for t in Threads:
     t.start()
 
-Systemd.notify("READY=1")
-log.info("Starting main loop")
+Systemd.notify('READY=1')
+log.info('Starting main loop')
+
+# Suppress duplicate logs
+LOG_USER = 1
+log_flags = 0
+
+main_running = True
 try:
     while main_running:
         now = time()
-        watchdogs_ok = True
+        threads_ok = True
         for t in Threads:
-            status = t.checkWatchdog()
-            if status == False:
-                log.error("Watchdog Failed " + str(t))
-                watchdogs_ok = False
-                raise WatchdogFailure(str(t))
+            status = t.check_thread()
+            if not status:
+                log.error('Thread Failed (%s)', str(t))
+                threads_ok = False
+                raise ThreadFailure(str(t))
 
-        if watchdogs_ok:
-            Systemd.notify("WATCHDOG=1")
+        if threads_ok:
+            Systemd.notify('WATCHDOG=1')
 
         if 'system' in config and 'shutdown_delay' in config['system']:
-            if now - car.last_data > config['system']['shutdown_delay'] and dongle.isCarAvailable() == False:
-                usercnt = int(check_output(['who','-q']).split(b'\n')[1].split(b'=')[1])
+            if (now - car.last_data > config['system']['shutdown_delay'] and
+                    not watchdog.is_car_available()):
+                usercnt = int(check_output(['who', '-q']).split(b'\n')[1].split(b'=')[1])
                 if usercnt == 0:
-                    log.info("Not charging and car off => Shutdown")
-                    check_call(['/bin/systemctl','poweroff'])
+                    log.info('Not charging and car off => Shutdown')
+                    check_call(['/bin/systemctl', 'poweroff'])
                     sleep(5)
-                else:
-                    log.info("Not charging and car off; Not shutting down, users connected")
+                elif not log_flags & LOG_USER:
+                    log.info('Not charging and car off; Not shutting down, users connected')
+                    log_flags |= LOG_USER
+            elif log_flags & LOG_USER:
+                log_flags &= ~LOG_USER
 
-        if wifi and config['wifi']['shutdown_delay'] != None:
-            if now - car.last_data > config['wifi']['shutdown_delay'] and dongle.isCarAvailable() == False:
-                wifi.disable()
-            else:
-                wifi.enable()
-
+        # Ensure messages get printed to the console.
         sys.stdout.flush()
 
         if main_running:
             loop_delay = 1 - (time()-now)
-            if loop_delay > 0: sleep(loop_delay)
+            sleep(max(0, loop_delay))
 
-except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
+except (KeyboardInterrupt, SystemExit):  # when you press ctrl+c
     main_running = False
-    Systemd.notify("STOPPING=1")
+    Systemd.notify('STOPPING=1')
 finally:
-    Systemd.notify("STOPPING=1")
-    log.info("Exiting ...")
-    for t in Threads[::-1]: # reverse Threads
+    Systemd.notify('STOPPING=1')
+    log.info('Exiting ...')
+    for t in Threads[::-1]:  # reverse Threads
         t.stop()
-    log.info("Bye.")
-
+    log.info('Bye.')

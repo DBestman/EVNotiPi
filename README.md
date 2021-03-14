@@ -6,7 +6,7 @@ Python Version of EVNotify
 - small wires in different colors: https://www.amazon.de/AZDelivery-Jumper-Arduino-Raspberry-Breadboard/dp/B07KYHBVR7?tag=gplay97-21
 - 4 screws M2,5x15 (to fix the OBD-Hat into the case)
 - 5 screws M2,5x8 self-cutting (for the case)
-- LTE Stick Huawai E3372 https://www.amazon.de/gp/product/B011BRKPLE?tag=gplay97-21
+- LTE Stick Huawai E8372 https://amzn.to/3hCsMmW
 - A case, for example https://github.com/noradtux/evnotipi-case
 - The i2c watchdog and power supply, https://github.com/noradtux/evnotipi-watchdog
 ### Variant 1 (MCP2515 based adapter with GPS); Recommended:
@@ -53,7 +53,7 @@ This pinout should be compatible to most DB9 to OBD2 cables. One can always buil
 - sudo sed -i -re "\\$adtparam=i2c_arm=on,i2c_arm_baudrate=50000" /boot/config.txt
 - sudo sed -i -re "\\$ai2c-dev" /etc/modules
 ### EVNotiPi
-- sudo git clone --recurse-submodules https://github.com/EVNotify/EVNotiPi /opt/evnotipi
+- sudo git clone https://github.com/EVNotify/EVNotiPi /opt/evnotipi
 - cd /opt/evnotipi
 - sudo pip3 install -r requirements.txt
 - sudo systemctl link /opt/evnotipi/evnotipi.service
@@ -62,4 +62,5 @@ This pinout should be compatible to most DB9 to OBD2 cables. One can always buil
 - sudo cp config.yaml.template config.yaml
 #### Edit config, follow comments in the file
 - sudo nano config.yaml # nano or any other editor
-
+#### Optionally: Set up a GPS receiver
+Set up gpsd, see a tutorial here: https://maker.pro/raspberry-pi/tutorial/how-to-use-a-gps-receiver-with-raspberry-pi-4. Once the "sudo cgps -s" command works, you are done.
