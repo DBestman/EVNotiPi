@@ -1,4 +1,7 @@
 # EVNotiPi
+Work In Progress.  
+Adapted to suit MY hardware (OBDLink MX+, GPS mouse, Huawei MS2372H-517 4G Modem)
+
 Python Version of EVNotify
 ## Needed Hardware
 - Raspberry Pi Zero W with GPIO Header https://buyzero.de/collections/boards-kits/products/raspberry-pi-zero-w-easy-mit-bestucktem-header
@@ -53,7 +56,7 @@ This pinout should be compatible to most DB9 to OBD2 cables. One can always buil
 - sudo sed -i -re "\\$adtparam=i2c_arm=on,i2c_arm_baudrate=50000" /boot/config.txt
 - sudo sed -i -re "\\$ai2c-dev" /etc/modules
 ### EVNotiPi
-- sudo git clone https://github.com/EVNotify/EVNotiPi /opt/evnotipi
+- sudo git clone https://DBestman.com/EVNotify/EVNotiPi /opt/evnotipi
 - cd /opt/evnotipi
 - sudo pip3 install -r requirements.txt
 - sudo systemctl link /opt/evnotipi/evnotipi.service
