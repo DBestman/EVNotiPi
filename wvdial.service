@@ -1,0 +1,12 @@
+[Unit]
+Description=wvdial Service
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=sudo wvdial
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=wvdial
+
+

@@ -1,0 +1,9 @@
+[Unit]
+Description=LTE Modem Path Monitoring
+PartOf=wvdial.service
+
+[Path]
+PathExists=/dev/ttyUSBModem
+
+[Install]
+WantedBy=multi-user.target
