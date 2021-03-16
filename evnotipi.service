@@ -3,6 +3,7 @@ Description=EVNotify Python Service
 Wants=gpsd.service
 Wants=network-online.target
 After=network-online.target
+Before=lighttpd.service raspapd.service
 
 [Service]
 Type=notify
