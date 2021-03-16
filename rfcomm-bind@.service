@@ -1,24 +1,14 @@
 [Unit] 
-Description=Connection to Bluetooth device %i via /dev/rfcomm0 
+Description=Bind Bluetooth device %i to /dev/rfcomm0 
 
 Wants=bluetooth.service 
 After=bluetooth.service 
 Before=evnotipi.service
-# Stops this unit if evnotipi service stopped
-#BindsTo=evnotipi.service
-#Before=evnotipi.service
-#BindsTo=evnotipi.service
 
 [Service] 
 Type=exec
-#ExecStartPre=/bin/bash -c 'while [ ! "$(hcitool name %i)" ]; do /bin/sleep 5; done'
-#ExecStart=rfcomm connect 0 %i 
-#ExecStartPost=/bin/bash -c '/bin/sleep 5; if [ ! -e /dev/rfcomm0 ]; then exit 69; fi'
-#ExecStart=/bin/bash -c 'while [ ! "$(hcitool name %i)" ]; do /bin/sleep 5; done; rfcomm connect 0 %i'
-#RestartSec=5s 
-#Restart=always 
 ExecStart=rfcomm bind 0 %i
 
 [Install] 
-#WantedBy=multi-user.target
-WantedBy=evnotipi.service
+WantedBy=multi-user.target
+#WantedBy=evnotipi.service
