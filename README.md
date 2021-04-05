@@ -7,7 +7,7 @@ Python Version of EVNotify
 ## Needed Hardware
 - Raspberry Pi Zero W with GPIO Header https://buyzero.de/collections/boards-kits/products/raspberry-pi-zero-w-easy-mit-bestucktem-header
 - OTG cable for Raspberry Pi https://buyzero.de/collections/raspberry-kabel-und-adapter/products/micro-usb-zu-usb-otg-adapter
-- small wires in different colors: https://www.amazon.de/AZDelivery-Jumper-Arduino-Raspberry-Breadboard/dp/B07KYHBVR7?tag=gplay97-21
+- Small wires in different colors: https://www.amazon.de/AZDelivery-Jumper-Arduino-Raspberry-Breadboard/dp/B07KYHBVR7?tag=gplay97-21
 - LTE Stick Huawai MS2372H-517, which works for me in Canada.  I had great difficulty finding an LTE stick that works in Canada.  But I didn't realize before buying that this stick did not have Wi-Fi, so it complicated my setup by forcing me to buy a USB hub, which wouldn't be needed if if the Pi connected to the Internet via Wi-Fi.  If I were to buy again, I would try and find one that has Wi-Fi.  Setup would have been much simpler.
 - Rapberry Pi USB Hub, to be able to connect both my LTE stick and the GPS antenna: https://www.amazon.ca/MakerSpot-Stackable-Raspberry-Connector-Bluetooth/dp/B01IT1TLFQ
 - USB GPS antenna: https://www.amazon.ca/Navigation-External-Receiver-Raspberry-Geekstory/dp/B078Y52FGQ
@@ -59,7 +59,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - rfcomm bind 0 <MAC> # /dev/rfcomm0 should appear
 - sudo systemctl link /opt/evnotipi/rfcomm-bind@.service
 - sudo systemctl enable rfcomm-bind@<MAC>.service
-#### Set up LTE USB Stick
+#### Set up USB LTE Stick
 - sudo nano USBModem.rules # nano or any other editor
 - Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
 - sudo nano /etc/wvdial.conf # nano or any other editor
