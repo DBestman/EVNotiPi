@@ -1,57 +1,39 @@
 # EVNotiPi
 Work In Progress.  
-Adapted to suit MY hardware (OBDLink MX+, GPS mouse, Huawei MS2372H-517 4G Modem)
+Adapted to suit MY hardware, some of which I already owned (OBDLink MX+, USB GPS antenna, Huawei MS2372H-517 4G Modem).
+I don't suggest that someone else repeat these steps, as I would do things differently if I had to do it again.  But I still want to document what I did, mostly for myself:
 
 Python Version of EVNotify
 ## Needed Hardware
 - Raspberry Pi Zero W with GPIO Header https://buyzero.de/collections/boards-kits/products/raspberry-pi-zero-w-easy-mit-bestucktem-header
 - OTG cable for Raspberry Pi https://buyzero.de/collections/raspberry-kabel-und-adapter/products/micro-usb-zu-usb-otg-adapter
 - small wires in different colors: https://www.amazon.de/AZDelivery-Jumper-Arduino-Raspberry-Breadboard/dp/B07KYHBVR7?tag=gplay97-21
-- 4 screws M2,5x15 (to fix the OBD-Hat into the case)
-- 5 screws M2,5x8 self-cutting (for the case)
-- LTE Stick Huawai E8372 https://amzn.to/3hCsMmW
-- A case, for example https://github.com/noradtux/evnotipi-case
-- The i2c watchdog and power supply, https://github.com/noradtux/evnotipi-watchdog
-### Variant 1 (MCP2515 based adapter with GPS); Recommended:
-- PiCan2 with GPS: https://buyzero.de/products/pican-2-mit-gps / http://skpang.co.uk/catalog/pican-with-gps-canbus-board-for-raspberry-pi-23-p-1520.html
-- µFL to SMA: http://skpang.co.uk/catalog/interface-cable-sma-to-ufl-p-551.html / https://www.amazon.de/Adafruit-u-FL-Adapter-Cable-ADA851/dp/B00XW2LKNO?tag=gplay97-21
-- Active external GPS antenna: http://skpang.co.uk/catalog/gps-antenna-with-sma-male-connector-p-236.html / https://www.amazon.de/Adafruit-GPS-Antenna-External-Active/dp/B01M0QB38R?tag=gplay97-21
-### Variant 2 (MCP2515 based adapter without GPS):
-- PiCan2: https://buyzero.de/products/pican-2 / http://skpang.co.uk/catalog/pican2-canbus-board-for-raspberry-pi-2-p-1475.html
-- Long Header Extender: http://skpang.co.uk/catalog/2x20pin-header-extender-with-105mm-pins-p-1500.html
-### Variant 2.1 (additional external GPS):
-- External GPS: https://www.amazon.de/Adafruit-Channels-GPS-Empfänger-Modul-145-dBmW-66-Channels-blau/dp/B01H1R8BK0?tag=gplay97-21
-### Variant 3 (Diamex OBD-Hat, the old default; does not support Renault Zoe):
-- Diamex OBD-Hat: https://www.diamex.de/dxshop/PI-OBD-HAT-OBD2-Modul-fuer-Raspberry-PI with flat connector
+- LTE Stick Huawai MS2372H-517, which works for me in Canada.  I had great difficulty finding an LTE stick that works in Canada.  But I didn't realize before buying that this stick did not have Wi-Fi, so it complicated my setup by forcing me to buy a USB hub, which wouldn't be needed if if the Pi connected to the Internet via Wi-Fi.  If I were to buy again, I would try and find one that has Wi-Fi.  Setup would have been much simpler.
+- Rapberry Pi USB Hub, to be able to connect both my LTE stick and the GPS antenna: https://www.amazon.ca/MakerSpot-Stackable-Raspberry-Connector-Bluetooth/dp/B01IT1TLFQ
+- USB GPS antenna: https://www.amazon.ca/Navigation-External-Receiver-Raspberry-Geekstory/dp/B078Y52FGQ
+- OBDLink MX+ that I alrady owned: https://www.amazon.ca/OBDLink-Bluetooth-Professional-Grade-Diagnostic-Performance/dp/B07JFRFJG6.  It would have been simpler to buy a PiCan.  But I already owned this device and I'm cheap.
+- The i2c watchdog and power supply, https://github.com/noradtux/evnotipi-watchdog.  I modified this design to use a buck converter as the power supply instead of the linear regulator, and a relay instead of the mosfets, both of which I already owned (Again, I'm cheap).  The (DPDT) relay also allows me to completely turn off the power to the OBDII dongle
+- OBD2 male and female connectors: https://www.aliexpress.com/item/4000087243731.html
+- I designed & 3D-printed my modified version of the case https://github.com/noradtux/evnotipi-case.
 ## Wiring
 ### OBD2 connection
-The case has a slot for a DB9 plug (the side with the pins). Connect the DB9 plug to CAN_H and CAN_L of the CAN-hat; connect GND and 12V to the watchdog. Pinout is as follows:
 ```
-OBD2        DB9
-4,5  GND    1,2
-  6  CAN_H  3
- 14  CAN_L  5
- 16  12V    9
+OBD2       
+4,5  GND   -> I only connected Pin4 to Ground as it is documented as Chassis ground.  Pin5 is the Signal Ground, I wanted to make sure I don't contaminate it.
+  6  CAN_H 
+ 14  CAN_L 
+ 16  12V   
 ```
-This pinout should be compatible to most DB9 to OBD2 cables. One can always build one's own cable, though.
 ## Installation
 ### Raspberry Pi
 - sudo apt update
 - sudo apt upgrade
 - sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd git watchdog rsyslog-
 - sudo systemctl disable --now serial-getty@ttyAMA0.service
-- sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\nenable_uart=1\ndtoverlay=disable-bt\ndtoverlay=gpio-poweroff:active_low" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt
+- sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\nenable_uart=1\ndtoverlay=gpio-poweroff,gpiopin=4,active_low" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt
 - sudo sed -i -re '/console=/ s/$/ panic=1/' /boot/cmdline.txt
 - sudo sed -i -re '/max-load/ s/^#//' /etc/watchdog.conf
 - sudo sed -i -re "\\$adtparam=watchdog=on" /boot/config.txt
-#### If using MCP2515 based adapter:
-- sudo apt install dkms
-- sudo git clone https://github.com/noradtux/can-isotp /usr/src/can-isotp
-- sudo dkms add /usr/src/can-isotp
-- sudo dkms install -m can-isotp -v r26.ced84ca
-- sudo sed -i -re "\\$adtparam=spi=on\ndtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25\ndtoverlay=spi-bcm2835-overlay" /boot/config.txt
-- echo -e "[Match]\nDriver=mcp251x\n\n[CAN]\nBitRate=500000\nRestartSec=100ms" | sudo tee /etc/systemd/network/can.network
-- sudo systemctl enable --now systemd-networkd
 #### If using the i2c watchdog (the one with the Trinket M0):
 - sudo sed -i -re "\\$adtparam=i2c_arm=on,i2c_arm_baudrate=50000" /boot/config.txt
 - sudo sed -i -re "\\$ai2c-dev" /etc/modules
@@ -65,5 +47,35 @@ This pinout should be compatible to most DB9 to OBD2 cables. One can always buil
 - sudo cp config.yaml.template config.yaml
 #### Edit config, follow comments in the file
 - sudo nano config.yaml # nano or any other editor
-#### Optionally: Set up a GPS receiver
+#### Set up Bluetooth OBDII dongle
+- bluetoothctl
+- [bluetooth]# power on
+- [bluetooth]# scan on
+- [bluetooth]# scan off
+- [bluetooth]# pair <MAC>
+- [bluetooth]# quit
+- rfcomm bind 0 <MAC> # /dev/rfcomm0 should appear
+- sudo systemctl link /opt/evnotipi/rfcomm-bind@.service
+- sudo systemctl enable rfcomm-bind@<MAC>.service
+#### Set up LTE USB Stick
+- sudo nano USBModem.rules # nano or any other editor
+- # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
+- sudo nano /etc/wvdial.conf # nano or any other editor
+- sudo systemctl link /opt/evnotipi/wvdial.path
+- sudo systemctl link /opt/evnotipi/wvdial.service
+- sudo systemctl enable wvdial.{path,service}
+#### Set up a GPS receiver
 Set up gpsd, see a tutorial here: https://maker.pro/raspberry-pi/tutorial/how-to-use-a-gps-receiver-with-raspberry-pi-4. Once the "sudo cgps -s" command works, you are done.
+#### Optional: Set up a RaspAP
+RaspAP allows the Pi to become a wireless access point when you're in your car.  https://docs.raspap.com/ap-sta/
+I had to reinstall several times before I could configure properly, but I don't remember what were the difficulties.
+To uninstall RaspAP:
+- cd /var/www/html
+- sudo installers/uninstall.sh
+#### TODO:
+"initial_turbo=60" in /boot/config.txt
+https://www.raspberrypi.org/forums/viewtopic.php?t=266324
+# Disable the rainbow splash screen
+disable_splash=1
+# Set the bootloader delay to 0 seconds. The default is 1s if not specified.
+boot_delay=0
