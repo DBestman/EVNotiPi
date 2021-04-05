@@ -1,3 +1,1 @@
-#ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1596", RUN+="/bin/sh -c 'sleep 5 && sudo /opt/evnotipi/sakis3g connect OTHER=USBMODEM USBMODEM=12d1:1596 APN=ltemobile.apn USBINTERFACE=0 APN_USER=0 APN_PASS=0 >> /home/pi/output.txt' &"
-#ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1596", RUN+="/bin/sh -c 'echo == >> /home/pi/udev-env.txt; env >> /home/pi/udev-env.txt'"
 SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1596",SYMLINK+="ttyUSBModem"
