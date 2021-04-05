@@ -10,5 +10,5 @@ Type=exec
 ExecStart=rfcomm bind 0 %i
 
 [Install] 
-WantedBy=multi-user.target
-#WantedBy=evnotipi.service
+#WantedBy=multi-user.target
+WantedBy=evnotipi.service
