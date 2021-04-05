@@ -63,8 +63,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - sudo nano USBModem.rules # nano or any other editor
 - Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
 - sudo nano /etc/wvdial.conf # nano or any other editor
-- sudo systemctl link /opt/evnotipi/wvdial.path
-- sudo systemctl link /opt/evnotipi/wvdial.service
+- sudo systemctl link /opt/evnotipi/wvdial.{path,service}
 - sudo systemctl enable wvdial.{path,service}
 #### Set up a GPS receiver
 Set up gpsd, see a tutorial here: https://maker.pro/raspberry-pi/tutorial/how-to-use-a-gps-receiver-with-raspberry-pi-4. Once the "sudo cgps -s" command works, you are done.
