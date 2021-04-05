@@ -19,18 +19,20 @@ Python Version of EVNotify
 ### OBD2 connection
 ```
 OBD2       
-4,5  GND   -> I only connected Pin4 to Ground as it is documented as Chassis ground.  Pin5 is the Signal Ground, I wanted to make sure I don't contaminate it.
+4,5  GND   
   6  CAN_H 
  14  CAN_L 
  16  12V   
 ```
+I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is the Signal Ground, I wanted to make sure I don't contaminate it.
+
 ## Installation
 ### Raspberry Pi
 - sudo apt update
 - sudo apt upgrade
 - sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd git watchdog rsyslog-
 - sudo systemctl disable --now serial-getty@ttyAMA0.service
-- sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\nenable_uart=1\ndtoverlay=gpio-poweroff,gpiopin=4,active_low" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt
+- sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\nenable_uart=1\ndtoverlay=gpio-poweroff,gpiopin=4,active_low=1" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt
 - sudo sed -i -re '/console=/ s/$/ panic=1/' /boot/cmdline.txt
 - sudo sed -i -re '/max-load/ s/^#//' /etc/watchdog.conf
 - sudo sed -i -re "\\$adtparam=watchdog=on" /boot/config.txt
@@ -59,7 +61,7 @@ OBD2
 - sudo systemctl enable rfcomm-bind@<MAC>.service
 #### Set up LTE USB Stick
 - sudo nano USBModem.rules # nano or any other editor
-- # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
+- Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
 - sudo nano /etc/wvdial.conf # nano or any other editor
 - sudo systemctl link /opt/evnotipi/wvdial.path
 - sudo systemctl link /opt/evnotipi/wvdial.service
