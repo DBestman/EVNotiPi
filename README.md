@@ -61,7 +61,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - sudo systemctl enable rfcomm-bind@<MAC>.service
 #### Set up USB LTE Stick
 - sudo nano USBModem.rules # nano or any other editor
-- Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
+- sudo ln -s USBModem.rules /etc/udev/rules.d/20-USBModem.rules  # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
 - sudo nano /etc/wvdial.conf # nano or any other editor
 - sudo systemctl link /opt/evnotipi/wvdial.{path,service}
 - sudo systemctl enable wvdial.{path,service}
