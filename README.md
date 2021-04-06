@@ -40,7 +40,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - sudo sed -i -re "\\$adtparam=i2c_arm=on,i2c_arm_baudrate=50000" /boot/config.txt
 - sudo sed -i -re "\\$ai2c-dev" /etc/modules
 ### EVNotiPi
-- sudo git clone https://DBestman.com/EVNotify/EVNotiPi /opt/evnotipi
+- sudo git clone https://github.com/DBestman/EVNotiPi /opt/evnotipi
 - cd /opt/evnotipi
 - rm -r extras/ # Don't need this folder to operate
 - git ls-files --deleted -z | git update-index --assume-unchanged -z --stdin # Tell git to ignore the files deleted above.
