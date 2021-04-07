@@ -42,7 +42,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 ### EVNotiPi
 - sudo git clone https://github.com/DBestman/EVNotiPi /opt/evnotipi
 - cd /opt/evnotipi
-- rm -r extras/ # Don't need this folder to operate
+- sudo rm -r extras/ # Don't need this folder to operate
 - git ls-files --deleted -z | git update-index --assume-unchanged -z --stdin # Tell git to ignore the files deleted above.
 - sudo pip3 install -r requirements.txt
 - sudo systemctl link /opt/evnotipi/evnotipi.service
