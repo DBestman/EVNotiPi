@@ -30,7 +30,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 ### Raspberry Pi
 - sudo apt update
 - sudo apt upgrade
-- sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd git watchdog rsyslog-
+- sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd gpsd-clients git watchdog rsyslog-
 - sudo systemctl disable --now serial-getty@ttyAMA0.service
 - sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\ndtoverlay=gpio-poweroff,gpiopin=4,active_low=1\ninitial_turbo=60\nboot_delay=0\ndisable_splash=1" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt
 - sudo sed -i -re '/console=/ s/$/ panic=1/' /boot/cmdline.txt
