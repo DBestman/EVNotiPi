@@ -52,29 +52,38 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 #### Edit config, follow comments in the file
 - sudo nano config.yaml # nano or any other editor
 #### Set up Bluetooth OBDII dongle
-- bluetoothctl
-- [bluetooth]# power on
-- [bluetooth]# scan on
-- [bluetooth]# scan off
-- [bluetooth]# pair <MAC>
-- [bluetooth]# quit
-- rfcomm bind 0 <MAC> # /dev/rfcomm0 should appear
+- sudo bluetoothctl
+- `[bluetooth]#` power on
+- `[bluetooth]#` scan on
+###### Note the MAC address of your dongle
+- `[bluetooth]#` scan off
+- `[bluetooth]#` pair <MAC>
+- `[bluetooth]#` quit
+- sudo rfcomm bind 0 <MAC> 
+- ls /dev/rfcomm0 # /dev/rfcomm0 should appear
 - sudo systemctl link /opt/evnotipi/rfcomm-bind@.service
 - sudo systemctl enable rfcomm-bind@<MAC>.service
 #### Set up USB LTE Stick
 - sudo nano USBModem.rules # nano or any other editor
-- sudo ln -s USBModem.rules /etc/udev/rules.d/20-USBModem.rules  # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
+- sudo ln -s /opt/evnotipi/USBModem.rules /etc/udev/rules.d/20-USBModem.rules  # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
+- sudo udevadm control --reload-rules && sudo udevadm trigger # reload udev rules
+- sudo apt install wvdial
+- sudo mv /etc/wvdial.conf /etc/wvdial.conf.bak # back up old configuration file
+- sudo ln -s /opt/evnotipi/wvdial.conf /etc/wvdial.conf # use my wvdial configuration file
 - sudo nano /etc/wvdial.conf # nano or any other editor
+- sudo wvdial # check that wvdial works
 - sudo systemctl link /opt/evnotipi/wvdial.{path,service}
 - sudo systemctl enable wvdial.{path,service}
 #### Set up a GPS receiver
 ##### Verify that the GPS receiver is working correctly. If not, see a tutorial here: https://maker.pro/raspberry-pi/tutorial/how-to-use-a-gps-receiver-with-raspberry-pi-4
 - `gpsmon` 
-##### I had to make changes to /etc/default/gpsd, or else sometimes the GPS would not work after the device was off for a few hours.
+##### I had to make changes to /etc/default/gpsd, or else sometimes the GPS would not work after the device was off for a few hours (>4 hours?).
 - `sudo sed -i -re 's/^(DEVICES=).*/\1\"\/dev\/gps0\"/' -e 's/^(GPSD_OPTIONS=).*/\1\"-n\"/' /etc/default/gpsd`
 #### Optional: Set up a RaspAP
 RaspAP allows the Pi to become a wireless access point when you're in your car.  https://docs.raspap.com/ap-sta/
-I had to reinstall several times before I could configure properly, but I don't remember what were the difficulties.
+I had to reinstall several times before I could configure properly, but I don't remember what were the difficulties.  Maybe it was a buggy version.
 To uninstall RaspAP:
 - cd /var/www/html
 - sudo installers/uninstall.sh
+#### Other
+- sudo raspi-config # System Options / Network at Boot / <No>, to save a few seconds at boot
