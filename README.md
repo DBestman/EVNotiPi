@@ -88,4 +88,4 @@ I had to uninstall/reinstall RaspAP several times before I could configure prope
 - cd /var/www/html
 - sudo installers/uninstall.sh
 #### Other
-- sudo raspi-config # System Options / Network at Boot / <No>, to save a few seconds at boot
+- sudo raspi-config nonint do_boot_wait 1 # Don't wait for network connection on boot.  This saves a few seconds at boot
