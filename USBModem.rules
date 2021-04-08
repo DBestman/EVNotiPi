@@ -1,1 +1,1 @@
-SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1596",SYMLINK+="ttyUSBModem"
+ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1596",SYMLINK+="ttyUSBModem"
