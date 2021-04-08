@@ -12,7 +12,7 @@ Python Version of EVNotify
 - Rapberry Pi USB Hub, to be able to connect both my LTE stick and the GPS antenna: https://www.amazon.ca/MakerSpot-Stackable-Raspberry-Connector-Bluetooth/dp/B01IT1TLFQ
 - USB GPS antenna: https://www.amazon.ca/Navigation-External-Receiver-Raspberry-Geekstory/dp/B078Y52FGQ
 - OBDLink MX+ that I alrady owned: https://www.amazon.ca/OBDLink-Bluetooth-Professional-Grade-Diagnostic-Performance/dp/B07JFRFJG6.  It would have been simpler to buy a PiCan.  But I already owned this device and I'm cheap.
-- The i2c watchdog and power supply, https://github.com/noradtux/evnotipi-watchdog.  I modified this design to use a buck converter as the power supply instead of the linear regulator, and a relay instead of the mosfets, both of which I already owned (Again, I'm cheap).  The (DPDT) relay also allows me to completely turn off the power to the OBDII dongle
+- The i2c watchdog and power supply, https://github.com/noradtux/evnotipi-watchdog.  I modified this design to use a buck converter as the power supply instead of the linear regulator, and a relay instead of the mosfets, both of which I already owned (Again, I'm cheap).  The (DPDT) relay also allows me to completely turn off the power to the OBDII dongle.
 - OBD2 male and female connectors: https://www.aliexpress.com/item/4000087243731.html
 - I designed & 3D-printed my modified version of the case https://github.com/noradtux/evnotipi-case.
 ## Wiring
@@ -43,7 +43,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - sudo git clone https://github.com/DBestman/EVNotiPi /opt/evnotipi
 - cd /opt/evnotipi
 - sudo rm -r extras/ # Don't need this folder to operate
-- git ls-files --deleted -z | git update-index --assume-unchanged -z --stdin # Tell git to ignore the files deleted above.
+- sudo git ls-files --deleted -z | sudo git update-index --assume-unchanged -z --stdin # Tell git to ignore the files deleted above.
 - sudo pip3 install -r requirements.txt
 - sudo systemctl link /opt/evnotipi/evnotipi.service
 - sudo systemctl enable evnotipi.service
