@@ -80,12 +80,12 @@ Verify that the GPS receiver is working correctly. If not, see a tutorial here: 
 
 I had to make changes to /etc/default/gpsd, or else sometimes the GPS would not work after the device was off for a few hours (>4 hours?).
 - `sudo sed -i -re 's/^(DEVICES=).*/\1\"\/dev\/gps0\"/' -e 's/^(GPSD_OPTIONS=).*/\1\"-n\"/' /etc/default/gpsd`
-#### Optional: Set up a RaspAP
-RaspAP allows the Pi to become a wireless access point when you're in your car.  
+#### Optional: Set up RaspAP
+RaspAP allows the Pi to become a wireless access point, enabling access to Internet when you're in your car.  
 Follow the instructions here: https://docs.raspap.com/ap-sta/.  
 I had to uninstall/reinstall RaspAP several times before I could configure properly, but I don't remember what were the difficulties.  Maybe it was a buggy version.
 ##### To uninstall RaspAP
 - cd /var/www/html
 - sudo installers/uninstall.sh
-#### Other
-- sudo raspi-config nonint do_boot_wait 1 # Don't wait for network connection on boot.  This saves a few seconds at boot
+#### Optimizing Boot Time
+- sudo raspi-config nonint do_boot_wait 1 # Don't wait for network connection on boot.  This saves a few seconds.
