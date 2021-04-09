@@ -89,3 +89,5 @@ I had to uninstall/reinstall RaspAP several times before I could configure prope
 - `sudo installers/uninstall.sh`
 #### Optimizing Boot Time
 - `sudo raspi-config nonint do_boot_wait 1` # Don't wait for network connection on boot.  This saves a few seconds.
+- `sudo sed -i -re '/console=/ s/$/ quiet fastboot/' /boot/cmdline.txt`
+- `sudo systemctl disable keyboard-setup.service` #keyboard not needed for headless
