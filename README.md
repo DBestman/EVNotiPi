@@ -88,6 +88,10 @@ I had to uninstall/reinstall RaspAP several times before I could configure prope
 - `cd /var/www/html`
 - `sudo installers/uninstall.sh`
 #### Optimizing Boot Time
+Debug with
+`systemd-analyze && systemd-analyze blame && systemd-analyze critical-chain evnotipi.service`
 - `sudo raspi-config nonint do_boot_wait 1` # Don't wait for network connection on boot.  This saves a few seconds.
 - `sudo sed -i -re '/console=/ s/$/ quiet fastboot/' /boot/cmdline.txt`
-- `sudo systemctl disable keyboard-setup.service` #keyboard not needed for headless
+- `sudo systemctl disable keyboard-setup.service` # Keyboard not needed for headless
+- `sudo systemctl disable triggerhappy.{service,socket}` # Unless you have an external joystick or something that uses \`/dev/input/\`
+- `sudo systemctl mask systemd-rfkill.service` # Disabling won't work.  Unless you have a hardware button to disable the WIFI you won't need this
