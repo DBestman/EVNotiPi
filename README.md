@@ -28,52 +28,52 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 
 ## Installation
 ### Raspberry Pi
-- sudo apt update
-- sudo apt upgrade
-- sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd gpsd-clients git watchdog rsyslog-
-- sudo systemctl disable --now serial-getty@ttyAMA0.service
-- sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\ndtoverlay=gpio-poweroff,gpiopin=4,active_low=1\ninitial_turbo=60\nboot_delay=0\ndisable_splash=1" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt
-- sudo sed -i -re '/console=/ s/$/ panic=1/' /boot/cmdline.txt
-- sudo sed -i -re '/max-load/ s/^#//' /etc/watchdog.conf
-- sudo sed -i -re "\\$adtparam=watchdog=on" /boot/config.txt
+- `sudo apt update`
+- `sudo apt upgrade`
+- `sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd gpsd-clients git watchdog rsyslog-
+- `sudo systemctl disable --now serial-getty@ttyAMA0.service`
+- `sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\ndtoverlay=gpio-poweroff,gpiopin=4,active_low=1\ninitial_turbo=60\nboot_delay=0\ndisable_splash=1" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt`
+- `sudo sed -i -re '/console=/ s/$/ panic=1/' /boot/cmdline.txt`
+- `sudo sed -i -re '/max-load/ s/^#//' /etc/watchdog.conf`
+- `sudo sed -i -re "\\$adtparam=watchdog=on" /boot/config.txt`
 #### If using the i2c watchdog (the one with the Trinket M0):
-- sudo sed -i -re "\\$adtparam=i2c_arm=on,i2c_arm_baudrate=50000" /boot/config.txt
-- sudo sed -i -re "\\$ai2c-dev" /etc/modules
+- `sudo sed -i -re "\\$adtparam=i2c_arm=on,i2c_arm_baudrate=50000" /boot/config.txt`
+- `sudo sed -i -re "\\$ai2c-dev" /etc/modules`
 ### EVNotiPi
-- sudo git clone https://github.com/DBestman/EVNotiPi /opt/evnotipi
-- cd /opt/evnotipi
-- sudo rm -r extras/ # Don't need this folder to operate
-- sudo git ls-files --deleted -z | sudo git update-index --assume-unchanged -z --stdin # Tell git to ignore the files deleted above.
-- sudo pip3 install -r requirements.txt
-- sudo systemctl link /opt/evnotipi/evnotipi.service
-- sudo systemctl enable evnotipi.service
-- sudo systemctl disable evnotipi_shutdown.{timer,service} # if updating
+- `sudo git clone https://github.com/DBestman/EVNotiPi /opt/evnotipi`
+- `cd /opt/evnotipi`
+- `sudo rm -r extras/` # Don't need this folder to operate
+- `sudo git ls-files --deleted -z | sudo git update-index --assume-unchanged -z --stdin` # Tell git to ignore the files deleted above.
+- `sudo pip3 install -r requirements.txt`
+- `sudo systemctl link /opt/evnotipi/evnotipi.service`
+- `sudo systemctl enable evnotipi.service`
+- `sudo systemctl disable evnotipi_shutdown.{timer,service}` # if updating
 - sudo cp config.yaml.template config.yaml
 #### Edit config, follow comments in the file
 - sudo nano config.yaml # nano or any other editor
 #### Set up Bluetooth OBDII dongle
-- sudo bluetoothctl
-- `[bluetooth]#` power on
-- `[bluetooth]#` scan on
+- `sudo bluetoothctl`
+- [bluetooth]# `power on`
+- [bluetooth]# `scan on`
 ###### Note the MAC address of your dongle
-- `[bluetooth]#` scan off
-- `[bluetooth]#` pair <MAC>
-- `[bluetooth]#` quit
-- sudo rfcomm bind 0 <MAC> 
-- ls /dev/rfcomm0 # /dev/rfcomm0 should appear
-- sudo systemctl link /opt/evnotipi/rfcomm-bind@.service
-- sudo systemctl enable rfcomm-bind@<MAC>.service
+- [bluetooth]# `scan off`
+- [bluetooth]# `pair <MAC>`
+- [bluetooth]# `quit`
+- `sudo rfcomm bind 0 <MAC> `
+- `ls /dev/rfcomm0` # /dev/rfcomm0 should appear
+- `sudo systemctl link /opt/evnotipi/rfcomm-bind@.service`
+- `sudo systemctl enable rfcomm-bind@<MAC>.service`
 #### Set up USB LTE Stick
-- sudo nano USBModem.rules # nano or any other editor
-- sudo ln -s /opt/evnotipi/USBModem.rules /etc/udev/rules.d/20-USBModem.rules  # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
-- sudo udevadm control --reload-rules && sudo udevadm trigger # reload udev rules
-- sudo apt install wvdial
-- sudo mv /etc/wvdial.conf /etc/wvdial.conf.bak # back up old configuration file
-- sudo ln -s /opt/evnotipi/wvdial.conf /etc/wvdial.conf # use my wvdial configuration file
-- sudo nano /etc/wvdial.conf # nano or any other editor
-- sudo wvdial # check that wvdial works
-- sudo systemctl link /opt/evnotipi/wvdial.{path,service}
-- sudo systemctl enable wvdial.{path,service}
+- `sudo nano USBModem.rules # nano or any other editor
+- `sudo ln -s /opt/evnotipi/USBModem.rules /etc/udev/rules.d/20-USBModem.rules`  # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
+- `sudo udevadm control --reload-rules && sudo udevadm trigger` # reload udev rules
+- `sudo apt install wvdial`
+- `sudo mv /etc/wvdial.conf /etc/wvdial.conf.bak` # back up old configuration file
+- `sudo ln -s /opt/evnotipi/wvdial.conf /etc/wvdial.conf` # use my wvdial configuration file
+- `sudo nano /etc/wvdial.conf` # nano or any other editor
+- `sudo wvdial` # check that wvdial works
+- `sudo systemctl link /opt/evnotipi/wvdial.{path,service}`
+- `sudo systemctl enable wvdial.{path,service}`
 #### Set up a GPS receiver
 Verify that the GPS receiver is working correctly. If not, see a tutorial here: https://maker.pro/raspberry-pi/tutorial/how-to-use-a-gps-receiver-with-raspberry-pi-4
 - `gpsmon`  
@@ -85,7 +85,7 @@ RaspAP allows the Pi to become a wireless access point, enabling access to Inter
 Follow the instructions here: https://docs.raspap.com/ap-sta/.  
 I had to uninstall/reinstall RaspAP several times before I could configure properly, but I don't remember what were the difficulties.  Maybe it was a buggy version.
 ##### To uninstall RaspAP
-- cd /var/www/html
-- sudo installers/uninstall.sh
+- `cd /var/www/html`
+- `sudo installers/uninstall.sh`
 #### Optimizing Boot Time
-- sudo raspi-config nonint do_boot_wait 1 # Don't wait for network connection on boot.  This saves a few seconds.
+- `sudo raspi-config nonint do_boot_wait 1` # Don't wait for network connection on boot.  This saves a few seconds.
