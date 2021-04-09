@@ -30,7 +30,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 ### Raspberry Pi
 - `sudo apt update`
 - `sudo apt upgrade`
-- `sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd gpsd-clients git watchdog rsyslog-
+- `sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml,gevent} gpsd gpsd-clients git watchdog rsyslog-`
 - `sudo systemctl disable --now serial-getty@ttyAMA0.service`
 - `sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\ndtoverlay=gpio-poweroff,gpiopin=4,active_low=1\ninitial_turbo=60\nboot_delay=0\ndisable_splash=1" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt`
 - `sudo sed -i -re '/console=/ s/$/ panic=1/' /boot/cmdline.txt`
@@ -48,9 +48,9 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - `sudo systemctl link /opt/evnotipi/evnotipi.service`
 - `sudo systemctl enable evnotipi.service`
 - `sudo systemctl disable evnotipi_shutdown.{timer,service}` # if updating
-- sudo cp config.yaml.template config.yaml
+- `sudo cp config.yaml.template config.yaml`
 #### Edit config, follow comments in the file
-- sudo nano config.yaml # nano or any other editor
+- `sudo nano config.yaml` # nano or any other editor
 #### Set up Bluetooth OBDII dongle
 - `sudo bluetoothctl`
 - [bluetooth]# `power on`
@@ -64,7 +64,7 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - `sudo systemctl link /opt/evnotipi/rfcomm-bind@.service`
 - `sudo systemctl enable rfcomm-bind@<MAC>.service`
 #### Set up USB LTE Stick
-- `sudo nano USBModem.rules # nano or any other editor
+- `sudo nano USBModem.rules` # nano or any other editor
 - `sudo ln -s /opt/evnotipi/USBModem.rules /etc/udev/rules.d/20-USBModem.rules`  # Install USBModem.rules : http://reactivated.net/writing_udev_rules.html#why
 - `sudo udevadm control --reload-rules && sudo udevadm trigger` # reload udev rules
 - `sudo apt install wvdial`
