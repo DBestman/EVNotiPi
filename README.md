@@ -47,7 +47,6 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - `sudo pip3 install -r requirements.txt`
 - `sudo systemctl link /opt/evnotipi/evnotipi.service`
 - `sudo systemctl enable evnotipi.service`
-- `sudo systemctl disable evnotipi_shutdown.{timer,service}` # if updating
 - `sudo cp config.yaml.template config.yaml`
 #### Edit config, follow comments in the file
 - `sudo nano config.yaml` # nano or any other editor
