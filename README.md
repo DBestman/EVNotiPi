@@ -75,10 +75,10 @@ I only connected Pin4 to Ground as it is documented as Chassis Ground.  Pin5 is 
 - `sudo systemctl enable wvdial.{path,service}`
 #### Set up a GPS receiver
 Verify that the GPS receiver is working correctly. If not, see a tutorial here: https://maker.pro/raspberry-pi/tutorial/how-to-use-a-gps-receiver-with-raspberry-pi-4
-- `gpsmon`  
+- `cgps -s`  
 
-I had to make changes to /etc/default/gpsd, or else sometimes the GPS would not work after the device was off for a few hours (>4 hours?).
-- `sudo sed -i -re 's/^(DEVICES=).*/\1\"\/dev\/gps0\"/' -e 's/^(GPSD_OPTIONS=).*/\1\"-n\"/' /etc/default/gpsd`
+Because of a bug where the GPS position is not updated, I added a command (ExecStartPre=ubxtool -p RESET) in evnotipi.service, to be run before evnotipi.  See https://www.reddit.com/r/raspberry_pi/comments/sthxpg/why_does_gpsd_not_update_a_location_past_its/
+- `sudo sed -i -re '/^ExecStart=.*/i ExecStartPre=ubxtool -p RESET' evnotipi.service`
 #### Optional: Set up RaspAP
 RaspAP allows the Pi to become a wireless access point, enabling access to Internet when you're in your car.  
 Follow the instructions here: https://docs.raspap.com/ap-sta/.  
