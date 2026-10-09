@@ -8,6 +8,7 @@ Before=lighttpd.service raspapd.service
 [Service]
 Type=notify
 WorkingDirectory=/opt/evnotipi
+ExecStartPre=ubxtool -p RESET
 ExecStart=/opt/evnotipi/evnotipi.py
 RestartSec=5s
 Restart=on-failure

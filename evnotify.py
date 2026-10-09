@@ -72,8 +72,8 @@ class EVNotify:
     def submit_data(self):
         """ Thread that submits data to EVNotify in regular intervals. """
         log = self._log
-        evn = EVNotifyAPI.EVNotify(self._config['akey'], self._config['token'])
-
+        evn = EVNotifyAPI.EVNotify(self._config['akey'], self._config['token'],
+                                   self._config.get('url', 'https://app.evnotify.de/'))
         abort_notification = ARMED
         charging_start_soc = 0
         last_charging = time()

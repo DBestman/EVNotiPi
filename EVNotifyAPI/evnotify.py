@@ -6,8 +6,8 @@ class CommunicationError(Exception): pass
 
 class EVNotify:
 
-    def __init__(self, akey=None, token=None):
-        self._rest_url = 'https://app.evnotify.de/'
+    def __init__(self, akey=None, token=None, rest_url='https://app.evnotify.de/'):
+        self._rest_url = rest_url
         self._session = requests.Session()
         self._session.headers.update({'User-Agent': 'PyEVNotifyApi/2'})
         self._akey = akey
